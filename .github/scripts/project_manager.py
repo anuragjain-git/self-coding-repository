@@ -24,6 +24,19 @@ class ProjectManager:
         cssutils.log.setLevel(logging.CRITICAL)  # Suppress cssutils warnings
         self.html_parser = html.parser.HTMLParser()
 
+    def setup_logging(self):
+    """Sets up logging for the project."""
+    log_dir = "logs"
+    os.makedirs(log_dir, exist_ok=True)
+    
+    logging.basicConfig(
+        filename=os.path.join(log_dir, "project_manager.log"),
+        level=logging.INFO,
+        format="%(asctime)s - %(levelname)s - %(message)s"
+    )
+    self.logger = logging.getLogger(__name__)
+    self.logger.info("Logging initialized.")
+
     def chatgpt_generate(self, prompt):
         """Generates a response from ChatGPT API."""
         try:
