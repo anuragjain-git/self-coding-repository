@@ -289,18 +289,24 @@ class ProjectManager:
         
         try:
             response = self.model.generate_content(prompt)
-            logging.info(f"Raw API Response: {response.status_code} - {response.text}")  # Log response status and content
+            # Log the full response structure for debugging
+            logging.info(f"Raw API Response: {response}")
+            
             try:
-                # Ensure response is not empty
-                if response.status_code == 200 and response.text.strip():
-                    # Clean triple-backtick formatting if present
-                    clean_text = response.text.strip().strip("```json").strip("```")
-                    implementation = json.loads(clean_text)  # Parse JSON
-                else:
-                    logging.error(f"API Request Failed. Status: {response.status_code}, Response: {response.text}")
-                    raise ValueError("API response was empty or not valid JSON")  # Raise a clear error
+                # Extract text content properly from the response
+                raw_text = response.candidates[0].content.parts[0].text.strip()
+            
+                # Strip triple-backtick formatting if present
+                clean_text = raw_text.strip("```json").strip("```")
+            
+                # Parse JSON safely
+                implementation = json.loads(clean_text)
+            
             except json.JSONDecodeError as e:
-                logging.error(f"JSON Parsing Failed! Error: {e}, Response Received: {response.text}")
+                logging.error(f"JSON Parsing Failed! Error: {e}, Response: {raw_text}")
+                raise  # Re-raise for debugging
+            except AttributeError as e:
+                logging.error(f"Unexpected Response Format! Error: {e}, Response: {response}")
                 raise  # Re-raise for debugging
             
             # Update files
