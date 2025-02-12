@@ -143,12 +143,6 @@ class ProjectManager:
         
         try:
             response = self.model.generate_content(prompt)
-            if response.status_code != 200:
-                logging.error(f"API request failed: {response.status_code}, Response: {response.text}")
-                return
-            else:
-                implementation = json.loads(response.text)
-
             fixed_code = response.text.strip()
             
             # Verify the fix worked
@@ -295,7 +289,14 @@ class ProjectManager:
         
         try:
             response = self.model.generate_content(prompt)
-            implementation = json.loads(response.text)
+            
+            logging.info(f"Raw API Response: {response.text}")  # Log the raw response
+            try:
+                implementation = json.loads(response.text)  # Parse JSON
+            except json.JSONDecodeError as e:
+                logging.error(f"JSON Parsing Failed! Error: {e}")
+                raise  # Re-raise the error for debugging
+                return
             
             # Update files
             if implementation.get('html'):
