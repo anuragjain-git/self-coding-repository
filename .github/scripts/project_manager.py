@@ -292,22 +292,30 @@ class ProjectManager:
         Implement the following requirement for a web project:
         {requirement}
         
-        Provide the necessary HTML, CSS, and JavaScript code.
+        Provide the necessary HTML, CSS, and JavaScript code.  Do *not* use Markdown formatting or code blocks (```) in the response.  The code must be valid JSON strings.
+        
         Format the response as JSON with the following structure:
         {{
-            "html": "code here",
-            "css": "code here",
-            "js": "code here",
+            "html": "code here",  //  The HTML code must be a valid JSON string.  Any backticks must be escaped.
+            "css": "code here",   // The CSS code must be a valid JSON string. Any backticks must be escaped.
+            "js": "code here",    // The JavaScript code must be a valid JSON string. Any backticks must be escaped.
             "description": "feature description"
         }}
         """
         
         try:
             response = self.model.generate_content(prompt)
+            cleaned_response = re.sub(r"```", "", response.text)
             
             # Log the full response structure for debugging
-            logging.info(f"Raw API Response: {response}")
-            implementation = json.loads(response.text)
+            logging.info(f"Raw API Response: {cleaned_response}")
+            try:
+                implementation = json.loads(cleaned_response)
+            except json.JSONDecodeError as e:
+                logging.error(f"Invalid JSON response from Gemini: {e}")
+                logging.error(f"Raw Response: {cleaned_response}")
+                # Handle the error appropriately, perhaps return None or an empty dictionary
+                return None  # Or {}
             
             # Update files
             if implementation.get('html'):
