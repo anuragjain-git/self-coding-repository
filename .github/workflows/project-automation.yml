@@ -75,19 +75,25 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
 
+          # Stash any unstaged changes before pulling
+          git stash --include-untracked
+
           # Pull the latest changes before pushing
           git pull --rebase origin $(git rev-parse --abbrev-ref HEAD)
-          
+
+          # Restore stashed changes
+          git stash pop || echo "No stash to apply"
+
           # Add all changes including new files
           git add index.html styles.css script.js logs/
-          
+
           # Check if there are any changes to commit
           if git diff --cached --quiet; then
             echo "No changes to commit"
             exit 0
           fi
-          
-          # Commit with detailed message
+
+          # Commit with a detailed message
           git commit -m "Auto update project files
 
           - Updated project files
@@ -95,9 +101,10 @@ jobs:
           - Created file backups if needed
           
           This is an automated commit from GitHub Actions."
-          
+
           # Push changes
           git push
+
 
       - name: Deploy to GitHub Pages
         if: success()
