@@ -1,1 +1,10 @@
-
+Create an interactive Tic Tac Toe game with the following features:
+- Responsive 3x3 grid layout
+- Players can click cells to place X or O
+- Visual indicators for whose turn it is
+- Win detection with highlighting of winning combination
+- Game status messages (current player, winner, draw)
+- Reset button to start new game
+- Modern minimalist design with smooth animations
+- Score tracking for X and O players
+- Hover effects on cells to show current player's symbol
