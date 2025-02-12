@@ -143,6 +143,12 @@ class ProjectManager:
         
         try:
             response = self.model.generate_content(prompt)
+            if response.status_code != 200:
+                logging.error(f"API request failed: {response.status_code}, Response: {response.text}")
+                return
+            else:
+                implementation = json.loads(response.text)
+
             fixed_code = response.text.strip()
             
             # Verify the fix worked
