@@ -289,25 +289,10 @@ class ProjectManager:
         
         try:
             response = self.model.generate_content(prompt)
+            
             # Log the full response structure for debugging
             logging.info(f"Raw API Response: {response}")
-            
-            try:
-                # Extract text content properly from the response
-                raw_text = response.candidates[0].content.parts[0].text.strip()
-            
-                # Strip triple-backtick formatting if present
-                clean_text = raw_text.strip("```json").strip("```")
-            
-                # Parse JSON safely
-                implementation = json.loads(clean_text)
-            
-            except json.JSONDecodeError as e:
-                logging.error(f"JSON Parsing Failed! Error: {e}, Response: {raw_text}")
-                raise  # Re-raise for debugging
-            except AttributeError as e:
-                logging.error(f"Unexpected Response Format! Error: {e}, Response: {response}")
-                raise  # Re-raise for debugging
+            implementation = json.loads(response.text)
             
             # Update files
             if implementation.get('html'):
