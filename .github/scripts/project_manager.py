@@ -1,115 +1,122 @@
-name: Project Auto-Management
-on:
-  # schedule:
-  #   - cron: '0 0 * * *'  # Runs at 12:00 AM daily
-  workflow_dispatch:      # Allows manual trigger
-  push:
-    paths:
-      - 'project_requirements.txt'  # Run when requirements are updated
+import os
+import json
+import openai
+from pathlib import Path
+import re
+import logging
+import subprocess
+import traceback
+from datetime import datetime
+import html.parser
+import cssutils
+import esprima
 
-jobs:
-  project-management:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0  # Fetch all history for proper git operations
+class ProjectManager:
+    def __init__(self):
+        self.openai_api_key = os.getenv('OPENAI_API_KEY')
+        self.project_root = Path('.')
+        self.requirements_file = self.project_root / 'project_requirements.txt'
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
+        # Setup logging
+        self.setup_logging()
+        
+        # Initialize error checkers
+        cssutils.log.setLevel(logging.CRITICAL)  # Suppress cssutils warnings
+        self.html_parser = html.parser.HTMLParser()
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install google-generativeai requests beautifulsoup4 cssutils esprima grpcio==1.60.1
+    def chatgpt_generate(self, prompt):
+        """Generates a response from ChatGPT API."""
+        try:
+            response = openai.ChatCompletion.create(
+                model="gpt-4",  # Use "gpt-3.5-turbo" if you want a cheaper option
+                messages=[{"role": "system", "content": "You are an expert code assistant."},
+                          {"role": "user", "content": prompt}],
+                temperature=0.3
+            )
+            return response['choices'][0]['message']['content'].strip()
+        except Exception as e:
+            logging.error(f"Error generating content with ChatGPT: {str(e)}")
+            return None
 
-      - name: Create log directories
-        run: |
-          mkdir -p logs/fixes
-          touch logs/.gitkeep
-          touch logs/fixes/.gitkeep
+    def check_implementation(self, requirement):
+        """Check if a requirement is implemented by analyzing existing files."""
+        try:
+            files_to_check = {
+                'html': self.project_root / 'index.html',
+                'css': self.project_root / 'styles.css',
+                'js': self.project_root / 'script.js'
+            }
 
-      - name: Run project manager
-        env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-        run: python .github/scripts/project_manager.py
+            content = ''
+            for file_path in files_to_check.values():
+                if file_path.exists():
+                    with open(file_path, 'r') as f:
+                        content += f'\n' + f.read()
 
-      - name: Ensure project files exist
-        run: |
-          touch index.html
-          touch styles.css
-          touch script.js
+            if not content.strip():
+                return False
 
-      - name: Upload logs as artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: project-logs
-          path: |
-            logs/
-            **/*.backup
-          retention-days: 90
-          compression-level: 9
-          overwrite: true
-          if-no-files-found: warn
+            prompt = f"""
+            Analyze if this requirement is implemented in the provided code:
+            
+            Requirement: {requirement}
+            
+            Code:
+            {content}
+            
+            Respond with only 'YES' or 'NO'.
+            """
+            
+            response = self.chatgpt_generate(prompt)
+            return response.upper() == 'YES'
+        except Exception as e:
+            logging.error(f"Error checking implementation: {str(e)}")
+            return False
 
-      - name: Upload project files
-        uses: actions/upload-artifact@v4
-        with:
-          name: project-files
-          path: |
-            index.html
-            styles.css
-            script.js
-          compression-level: 6
-          overwrite: true
-          if-no-files-found: warn
-          include-hidden-files: false
+    def implement_requirement(self, requirement):
+        """Implement a new requirement using ChatGPT."""
+        prompt = f"""
+        Implement the following requirement for a web project:
+        {requirement}
 
-      - name: Commit and push changes
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
+        Provide *only* the complete and necessary HTML, CSS, and JavaScript code to implement the feature, formatted as a JSON object:
+        
+        {{
+            "html": "<HTML_CODE>",
+            "css": "<CSS_CODE>",
+            "js": "<JS_CODE>",
+            "description": "<DESCRIPTION>"
+        }}
+        """
+        
+        response = self.chatgpt_generate(prompt)
+        
+        if response:
+            try:
+                implementation = json.loads(response)
+                if implementation.get('html'):
+                    self._update_file('index.html', implementation['html'])
+                if implementation.get('css'):
+                    self._update_file('styles.css', implementation['css'])
+                if implementation.get('js'):
+                    self._update_file('script.js', implementation['js'])
+                self._update_readme(requirement, implementation.get('description', ''))
+            except json.JSONDecodeError:
+                logging.error("Invalid JSON response from ChatGPT")
+        
+    def run(self):
+        """Main execution method."""
+        logging.info("Starting project manager run")
+        try:
+            requirements = self.read_requirements()
+            for requirement in requirements:
+                if not self.check_implementation(requirement):
+                    self.implement_requirement(requirement)
+            logging.info("Completed project manager run")
+        except Exception as e:
+            logging.error(f"Error in main execution: {str(e)}\n{traceback.format_exc()}")
 
-          # Stash any unstaged changes before pulling
-          git stash --include-untracked
-
-          # Pull the latest changes before pushing
-          git pull --rebase origin $(git rev-parse --abbrev-ref HEAD)
-
-          # Restore stashed changes
-          git stash pop || echo "No stash to apply"
-
-          # Add all changes including new files
-          git add index.html styles.css script.js logs/
-
-          # Check if there are any changes to commit
-          if git diff --cached --quiet; then
-            echo "No changes to commit"
-            exit 0
-          fi
-
-          # Commit with a detailed message
-          git commit -m "Auto update project files"
-
-          - Updated project files
-          - Generated error fix logs
-          - Created file backups if needed
-          
-          This is an automated commit from GitHub Actions."
-
-          # Push changes
-          git push
-
-
-      - name: Deploy to GitHub Pages
-        if: success()
-        run: |
-          if [ -f "index.html" ]; then
-            git checkout -b gh-pages
-            git push origin gh-pages --force
-          fi
+if __name__ == "__main__":
+    openai.api_key = os.getenv("OPENAI_API_KEY")
+    manager = ProjectManager()
+    manager.run()
