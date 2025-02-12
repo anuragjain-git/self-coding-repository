@@ -39,27 +39,36 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: python .github/scripts/project_manager.py
 
+      - name: Ensure project files exist
+        run: |
+          touch index.html
+          touch styles.css
+          touch script.js
+
       - name: Upload logs as artifacts
         uses: actions/upload-artifact@v4
         with:
           name: project-logs
           path: |
-            logs/**/*.log
+            logs/
             **/*.backup
           retention-days: 90
-          compression-level: 9  # Maximum compression for logs
-          overwrite: true      # Override existing artifacts with same name
+          compression-level: 9
+          overwrite: true
+          if-no-files-found: warn
 
       - name: Upload project files
         uses: actions/upload-artifact@v4
         with:
           name: project-files
           path: |
-            *.html
-            *.css
-            *.js
-          compression-level: 6  # Medium compression for project files
+            index.html
+            styles.css
+            script.js
+          compression-level: 6
           overwrite: true
+          if-no-files-found: warn
+          include-hidden-files: false
 
       - name: Commit and push changes
         run: |
@@ -67,7 +76,7 @@ jobs:
           git config --local user.name "GitHub Action"
           
           # Add all changes including new files
-          git add .
+          git add index.html styles.css script.js logs/
           
           # Check if there are any changes to commit
           if git diff --cached --quiet; then
