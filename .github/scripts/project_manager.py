@@ -35,7 +35,22 @@ class ProjectManager:
                 
             with open(self.requirements_file, 'r') as f:
                 # Read lines and filter out empty ones
-                requirements = [line.strip() for line in f.readlines() if line.strip()]
+                # requirements = [line.strip() for line in f.readlines() if line.strip()]
+                requirements = []
+                current_requirement = ""
+                
+                for line in f:
+                    if line.startswith("-"):  # This is a sub-point, add it to the current requirement
+                        current_requirement += f"\n{line.strip()}"
+                    else:
+                        if current_requirement:  # If there's an existing requirement, save it
+                            requirements.append(current_requirement.strip())
+                        current_requirement = line.strip()  # Start a new requirement
+                
+                if current_requirement:  # Add the last requirement
+                    requirements.append(current_requirement.strip())
+                
+                logging.info(f"Parsed {len(requirements)} grouped requirements")
                 
             if not requirements:
                 logging.warning("Requirements file is empty")
