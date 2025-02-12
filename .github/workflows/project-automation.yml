@@ -1,0 +1,83 @@
+name: Project Auto-Management
+on:
+  schedule:
+    - cron: '0 0 * * *'  # Runs at 12:00 AM daily
+  workflow_dispatch:      # Allows manual trigger
+  push:
+    paths:
+      - 'project_requirements.txt'  # Run when requirements are updated
+
+jobs:
+  project-management:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch all history for proper git operations
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install google-generativeai requests beautifulsoup4 cssutils esprima
+
+      - name: Create log directories
+        run: |
+          mkdir -p logs/fixes
+          touch logs/.gitkeep
+          touch logs/fixes/.gitkeep
+
+      - name: Run project manager
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: python .github/scripts/project_manager.py
+
+      - name: Upload logs as artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: project-logs
+          path: |
+            logs/**/*.log
+            **/*.backup
+          retention-days: 90
+
+      - name: Commit and push changes
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          
+          # Add all changes including new files
+          git add .
+          
+          # Check if there are any changes to commit
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          
+          # Commit with detailed message
+          git commit -m "Auto update project files
+
+          - Updated project files
+          - Generated error fix logs
+          - Created file backups if needed
+          
+          This is an automated commit from GitHub Actions."
+          
+          # Push changes
+          git push
+
+      - name: Deploy to GitHub Pages
+        if: success()
+        run: |
+          if [ -f "index.html" ]; then
+            git checkout -b gh-pages
+            git push origin gh-pages --force
+          fi
