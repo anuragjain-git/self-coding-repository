@@ -162,6 +162,60 @@ class ProjectManager:
         except Exception as e:
             logging.error(f"Error during fix attempt: {str(e)}")
             return None
+        
+    def check_and_fix_file(self, file_path):
+        """Check a file for errors and fix if necessary"""
+        with open(file_path, 'r') as f:
+            content = f.read()
+            
+        file_type = file_path.suffix.lower()
+        error = None
+        
+        if file_type == '.html':
+            error = self.check_html_errors(content)
+            language = 'HTML'
+        elif file_type == '.css':
+            error = self.check_css_errors(content)
+            language = 'CSS'
+        elif file_type == '.js':
+            error = self.check_js_errors(content)
+            language = 'JavaScript'
+        else:
+            return
+            
+        if error:
+            logging.warning(f"Found error in {file_path}: {error}")
+            fixed_code = self.fix_code_error(content, error, language)
+            
+            if fixed_code:
+                # Backup original file
+                backup_path = file_path.with_suffix(f"{file_path.suffix}.backup")
+                with open(backup_path, 'w') as f:
+                    f.write(content)
+                    
+                # Write fixed code
+                with open(file_path, 'w') as f:
+                    f.write(fixed_code)
+                    
+                logging.info(f"Fixed error in {file_path}. Original backed up to {backup_path}")
+                
+                # Log the fix details
+                self.log_fix(file_path, error, content, fixed_code)
+                
+    def log_fix(self, file_path, error, original_code, fixed_code):
+        """Log details of code fixes"""
+        fixes_log_dir = self.project_root / 'logs' / 'fixes'
+        fixes_log_dir.mkdir(exist_ok=True)
+        
+        log_file = fixes_log_dir / f'fix_{datetime.now().strftime("%Y%m%d_%H%M%S")}_{file_path.name}.log'
+        
+        with open(log_file, 'w') as f:
+            f.write(f"File: {file_path}\n")
+            f.write(f"Error: {error}\n")
+            f.write("\nOriginal Code:\n")
+            f.write(original_code)
+            f.write("\n\nFixed Code:\n")
+            f.write(fixed_code)
 
     def _update_file(self, filename, content):
         """Update or create a file with new content."""
@@ -216,6 +270,46 @@ class ProjectManager:
             
         except Exception as e:
             logging.error(f"Error updating README: {str(e)}")
+
+    def implement_requirement(self, requirement):
+        """Implement a new requirement using Gemini."""
+        prompt = f"""
+        Implement the following requirement for a web project:
+        {requirement}
+        
+        Provide the necessary HTML, CSS, and JavaScript code.
+        Format the response as JSON with the following structure:
+        {{
+            "html": "code here",
+            "css": "code here",
+            "js": "code here",
+            "description": "feature description"
+        }}
+        """
+        
+        try:
+            response = self.model.generate_content(prompt)
+            implementation = json.loads(response.text)
+            
+            # Update files
+            if implementation.get('html'):
+                self._update_file('index.html', implementation['html'])
+            if implementation.get('css'):
+                self._update_file('styles.css', implementation['css'])
+            if implementation.get('js'):
+                self._update_file('script.js', implementation['js'])
+            
+            # Check for errors in updated files
+            for file_name in ['index.html', 'styles.css', 'script.js']:
+                file_path = self.project_root / file_name
+                if file_path.exists():
+                    self.check_and_fix_file(file_path)
+            
+            # Update README
+            self._update_readme(requirement, implementation['description'])
+            
+        except Exception as e:
+            logging.error(f"Error implementing requirement: {str(e)}\n{traceback.format_exc()}")
 
     def run(self):
         """Main execution method."""
