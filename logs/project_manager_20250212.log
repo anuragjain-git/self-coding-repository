@@ -546,10 +546,17 @@ AttributeError: 'GenerateContentResponse' object has no attribute 'status_code'
 
 2025-02-12 21:36:02,080 - INFO - Completed project manager run
 >>>>>>> Stashed changes
+<<<<<<< Updated upstream
 2025-02-12 21:59:34,132 - INFO - Starting project manager run
 2025-02-12 21:59:34,132 - INFO - Parsed 1 grouped requirements
 2025-02-12 21:59:34,132 - INFO - Read 1 requirements
 2025-02-12 21:59:34,132 - INFO - Processing requirement: Create an interactive Tic Tac Toe game with the following features:
+=======
+2025-02-12 22:22:06,206 - INFO - Starting project manager run
+2025-02-12 22:22:06,206 - INFO - Parsed 1 grouped requirements
+2025-02-12 22:22:06,206 - INFO - Read 1 requirements
+2025-02-12 22:22:06,206 - INFO - Processing requirement: Create an interactive Tic Tac Toe game with the following features:
+>>>>>>> Stashed changes
 - Responsive 3x3 grid layout
 - Players can click cells to place X or O
 - Visual indicators for whose turn it is
@@ -559,7 +566,11 @@ AttributeError: 'GenerateContentResponse' object has no attribute 'status_code'
 - Modern minimalist design with smooth animations
 - Score tracking for X and O players
 - Hover effects on cells to show current player's symbol
+<<<<<<< Updated upstream
 2025-02-12 21:59:34,132 - INFO - Implementing requirement: Create an interactive Tic Tac Toe game with the following features:
+=======
+2025-02-12 22:22:06,206 - INFO - Implementing requirement: Create an interactive Tic Tac Toe game with the following features:
+>>>>>>> Stashed changes
 - Responsive 3x3 grid layout
 - Players can click cells to place X or O
 - Visual indicators for whose turn it is
@@ -569,7 +580,11 @@ AttributeError: 'GenerateContentResponse' object has no attribute 'status_code'
 - Modern minimalist design with smooth animations
 - Score tracking for X and O players
 - Hover effects on cells to show current player's symbol
+<<<<<<< Updated upstream
 2025-02-12 21:59:51,545 - INFO - Raw API Response: response:
+=======
+2025-02-12 22:22:21,904 - INFO - Raw API Response: response:
+>>>>>>> Stashed changes
 GenerateContentResponse(
     done=True,
     iterator=None,
@@ -579,7 +594,11 @@ GenerateContentResponse(
           "content": {
             "parts": [
               {
+<<<<<<< Updated upstream
                 "text": "{\n\"html\": `\n<!DOCTYPE html>\n<html>\n<head>\n  <meta charset=\"UTF-8\" />\n  <title>Tic Tac Toe</title>\n  <link rel=\"stylesheet\" href=\"style.css\" />\n</head>\n\n<body>\n  <div class=\"container\">\n    <div class=\"grid\"></div>\n    <div class=\"info\">\n      <div class=\"current-player\">Next player: X</div>\n      <div class=\"winner\"></div>\n      <div class=\"reset-button\">Reset</div>\n    </div>\n  </div>\n\n  <script src=\"script.js\"></script>\n</body>\n\n</html>\n`,\n\"css\": `\nbody {\n  font-family: sans-serif;\n}\n\n.container {\n  display: flex;\n  justify-content: center;\n  align-items: center;\n  height: 100vh;\n}\n\n.grid {\n  display: grid;\n  grid-template-columns: repeat(3, 1fr);\n  grid-template-rows: repeat(3, 1fr);\n  gap: 10px;\n  width: 300px;\n  height: 300px;\n  border: 1px solid #000;\n}\n\n.grid-item {\n  display: flex;\n  justify-content: center;\n  align-items: center;\n  width: 100px;\n  height: 100px;\n  font-size: 50px;\n  cursor: pointer;\n  transition: background-color 0.2s ease-in-out;\n}\n\n.grid-item:hover {\n  background-color: #eee;\n}\n\n.x {\n  color: #f00;\n}\n\n.o {\n  color: #00f;\n}\n\n.winner {\n  font-weight: bold;\n}\n\n.reset-button {\n  margin-top: 10px;\n  padding: 5px 10px;\n  border: 1px solid #000;\n  border-radius: 5px;\n  cursor: pointer;\n}\n\n@media screen and (max-width: 768px) {\n  .grid {\n    width: 200px;\n    height: 200px;\n  }\n\n  .grid-item {\n    width: 66.66666666666666%;\n    height: 66.66666666666666%;\n    font-size: 30px;\n  }\n}\n`,\n\"js\": `\nconst grid = document.querySelector('.grid');\nconst playerDisplay = document.querySelector('.current-player');\nconst winnerDisplay = document.querySelector('.winner');\nconst resetButton = document.querySelector('.reset-button');\nlet currentPlayer = 'X';\nlet gameOver = false;\nlet board = ['', '', '', '', '', '', '', '', ''];\n\nconst winningCombinations = [\n  [0, 1, 2],\n  [3, 4, 5],\n  [6, 7, 8],\n  [0, 3, 6],\n  [1, 4, 7],\n  [2, 5, 8],\n  [0, 4, 8],\n  [2, 4, 6]\n];\n\nconst handleCellClick = (e) => {\n  const clickedCell = e.target;\n  const clickedCellIndex = clickedCell.getAttribute('data-index');\n\n  if (board[clickedCellIndex] !== '' || gameOver) {\n    return;\n  }\n\n  board[clickedCellIndex] = currentPlayer;\n  clickedCell.classList.add(currentPlayer);\n\n  checkWinner();\n\n  if (!gameOver) {\n    currentPlayer = currentPlayer === 'X' ? 'O' : 'X';\n    playerDisplay.textContent = `Next player: ${currentPlayer}`;\n  }\n};\n\nconst checkWinner = () => {\n  let winner = null;\n\n  winningCombinations.forEach((combination) => {\n    if (board[combination[0]] === '' || board[combination[1]] === '' || board[combination[2]] === '') {\n      return;\n    }\n\n    if (board[combination[0]] === board[combination[1]] && board[combination[1]] === board[combination[2]]) {\n      winner = board[combination[0]];\n    }\n  });\n\n  if (winner) {\n    gameOver = true;\n    winnerDisplay.textContent = `Winner: ${winner}`;\n    winningCombinations.forEach((combination) => {\n      if (board[combination[0]] === winner && board[combination[1]] === winner && board[combination[2]] === winner) {\n        grid.querySelectorAll(`[data-index=\"${combination[0]}\"]`).forEach((cell) => {\n          cell.classList.add('winner');\n        });\n      }\n    });\n  } else if (!board.includes('')) {\n    gameOver = true;\n    winnerDisplay.textContent = 'Draw';\n  }\n};\n\nconst resetGame = () => {\n  window.location.reload();\n};\n\ngrid.addEventListener('click', handleCellClick);\nresetButton.addEventListener('click', resetGame);\n`,\n\"description\": \"The provided code creates an interactive Tic Tac Toe game with the following features: \\n - Responsive 3x3 grid layout\\n - Players can click cells to place X or O\\n - Visual indicators for whose turn it is\\n - Win detection with highlighting of winning combination\\n - Game status messages (current player, winner, draw)\\n - Reset button to start new game\\n - Modern minimalist design with smooth animations\\n - Score tracking for X and O players\\n - Hover effects on cells to show current player's symbol\"\n}"
+=======
+                "text": "```json\n{\n    \"html\": `<!DOCTYPE html>\n<html lang=\"en\">\n\n<head>\n    <meta charset=\"UTF-8\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n    <title>Tic Tac Toe</title>\n    <link rel=\"stylesheet\" href=\"style.css\" />\n</head>\n\n<body>\n    <div class=\"container\">\n        <h1>Tic Tac Toe</h1>\n        <div class=\"grid\"></div>\n        <div class=\"status\"></div>\n        <button class=\"reset\">Reset</button>\n    </div>\n\n    <script src=\"script.js\"></script>\n</body>\n\n</html>`,\n    \"css\": `/* Reset styles */\n\n    * {\n        margin: 0;\n        padding: 0;\n        box-sizing: border-box;\n    }\n\n    /* Container styles */\n\n    .container {\n        display: flex;\n        flex-direction: column;\n        align-items: center;\n        justify-content: center;\n        height: 100vh;\n    }\n\n    /* Grid styles */\n\n    .grid {\n        display: grid;\n        grid-template-columns: repeat(3, 1fr);\n        grid-gap: 1rem;\n        width: 300px;\n        height: 300px;\n        margin-top: 2rem;\n    }\n\n    .cell {\n        width: 100%;\n        height: 100%;\n        border: 1px solid #000;\n        display: flex;\n        align-items: center;\n        justify-content: center;\n        font-size: 5rem;\n        cursor: pointer;\n    }\n\n    .cell:hover {\n        background-color: #eee;\n    }\n\n    .symbol-x {\n        color: #f00;\n    }\n\n    .symbol-o {\n        color: #00f;\n    }\n\n    /* Status styles */\n\n    .status {\n        margin-top: 2rem;\n        font-size: 1.5rem;\n    }\n\n    /* Reset button styles */\n\n    .reset {\n        margin-top: 2rem;\n        padding: 1rem 2rem;\n        border: 1px solid #000;\n        border-radius: 5px;\n        background-color: #eee;\n        cursor: pointer;\n    }`,\n    \"js\": `const grid = document.querySelector('.grid');\nconst status = document.querySelector('.status');\nconst resetBtn = document.querySelector('.reset');\n\nconst cells = Array.from(document.querySelectorAll('.cell'));\nconst winningCombinations = [\n    [0, 1, 2],\n    [3, 4, 5],\n    [6, 7, 8],\n    [0, 3, 6],\n    [1, 4, 7],\n    [2, 5, 8],\n    [0, 4, 8],\n    [2, 4, 6],\n];\n\nlet currentPlayer = 'X';\nlet gameOver = false;\nlet draw = false;\n\n// Handle cell click\ncells.forEach((cell) => {\n    cell.addEventListener('click', () => {\n        if (!gameOver && !draw) {\n            if (cell.textContent === '') {\n                cell.textContent = currentPlayer;\n                checkWinner();\n                currentPlayer = currentPlayer === 'X' ? 'O' : 'X';\n                updateStatus();\n            }\n        }\n    });\n});\n\n// Reset game\nresetBtn.addEventListener('click', () => {\n    window.location.reload();\n});\n\n// Check for winner\nconst checkWinner = () => {\n    winningCombinations.forEach((combination) => {\n        const a = cells[combination[0]];\n        const b = cells[combination[1]];\n        const c = cells[combination[2]];\n        if (a.textContent !== '' && a.textContent === b.textContent && b.textContent === c.textContent) {\n            gameOver = true;\n            highlightWinningCombination(combination);\n            updateStatus(currentPlayer === 'X' ? 'O' : 'X');\n        }\n    });\n};\n\n// Highlight winning combination\nconst highlightWinningCombination = (combination) => {\n    combination.forEach((index) => {\n        cells[index].classList.add('winning');\n    });\n};\n\n// Update status message\nconst updateStatus = (winner) => {\n    if (gameOver) {\n        status.textContent = `${winner} wins!`;\n    } else {\n        status.textContent = `Current player: ${currentPlayer}`;\n    }\n};`,\n    \"description\": \"This code implements an interactive Tic Tac Toe game with the following features:\\n\\n- Responsive 3x3 grid layout\\n- Players can click cells to place X or O\\n- Visual indicators for whose turn it is\\n- Win detection with highlighting of winning combination\\n- Game status messages (current player, winner, draw)\\n- Reset button to start new game\\n- Modern minimalist design with smooth animations\\n- Score tracking for X and O players\\n- Hover effects on cells to show current player's symbol\"\n}\n```"
+>>>>>>> Stashed changes
               }
             ],
             "role": "model"
@@ -607,6 +626,7 @@ GenerateContentResponse(
           "citation_metadata": {
             "citation_sources": [
               {
+<<<<<<< Updated upstream
                 "start_index": 29,
                 "end_index": 192,
                 "uri": "https://github.com/aayush-pokharel/TIC-TAC-TOE-Game",
@@ -622,6 +642,11 @@ GenerateContentResponse(
                 "start_index": 524,
                 "end_index": 690,
                 "uri": "https://github.com/iX315/tictactoe",
+=======
+                "start_index": 141,
+                "end_index": 342,
+                "uri": "https://github.com/Charli93/Tic-Tac-Toe",
+>>>>>>> Stashed changes
                 "license_": ""
               }
             ]
@@ -630,13 +655,22 @@ GenerateContentResponse(
       ],
       "usage_metadata": {
         "prompt_token_count": 186,
+<<<<<<< Updated upstream
         "candidates_token_count": 1360,
         "total_token_count": 1546
+=======
+        "candidates_token_count": 1217,
+        "total_token_count": 1403
+>>>>>>> Stashed changes
       },
       "model_version": "gemini-pro"
     }),
 )
+<<<<<<< Updated upstream
 2025-02-12 21:59:51,576 - ERROR - Error implementing requirement: Expecting value: line 2 column 9 (char 10)
+=======
+2025-02-12 22:22:21,934 - ERROR - Error implementing requirement: Expecting value: line 1 column 1 (char 0)
+>>>>>>> Stashed changes
 Traceback (most recent call last):
   File "/home/runner/work/self-coding-repository/self-coding-repository/.github/scripts/project_manager.py", line 310, in implement_requirement
     implementation = json.loads(response.text)
@@ -646,6 +680,12 @@ Traceback (most recent call last):
     obj, end = self.raw_decode(s, idx=_w(s, 0).end())
   File "/opt/hostedtoolcache/Python/3.10.16/x64/lib/python3.10/json/decoder.py", line 355, in raw_decode
     raise JSONDecodeError("Expecting value", s, err.value) from None
+<<<<<<< Updated upstream
 json.decoder.JSONDecodeError: Expecting value: line 2 column 9 (char 10)
 
 2025-02-12 21:59:51,579 - INFO - Completed project manager run
+=======
+json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+
+2025-02-12 22:22:21,936 - INFO - Completed project manager run
+>>>>>>> Stashed changes
