@@ -1,7 +1,7 @@
 name: Project Auto-Management
 on:
-  schedule:
-    - cron: '0 0 * * *'  # Runs at 12:00 AM daily
+  # schedule:
+  #   - cron: '0 0 * * *'  # Runs at 12:00 AM daily
   workflow_dispatch:      # Allows manual trigger
   push:
     paths:
