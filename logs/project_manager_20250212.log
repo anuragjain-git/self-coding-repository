@@ -14,3 +14,11 @@ Traceback (most recent call last):
 AttributeError: 'ProjectManager' object has no attribute 'read_requirements'
 
 2025-02-12 19:40:26,755 - INFO - Completed project manager run
+2025-02-12 19:43:51,683 - INFO - Starting project manager run
+2025-02-12 19:43:51,683 - ERROR - Error in main execution: 'ProjectManager' object has no attribute 'read_requirements'
+Traceback (most recent call last):
+  File "/home/runner/work/self-coding-repository/self-coding-repository/.github/scripts/project_manager.py", line 201, in run
+    requirements = self.read_requirements()
+AttributeError: 'ProjectManager' object has no attribute 'read_requirements'
+
+2025-02-12 19:43:51,683 - INFO - Completed project manager run
