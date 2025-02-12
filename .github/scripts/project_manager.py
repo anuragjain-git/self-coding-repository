@@ -94,7 +94,7 @@ jobs:
           fi
 
           # Commit with a detailed message
-          git commit -m "Auto update project files
+          git commit -m "Auto update project files"
 
           - Updated project files
           - Generated error fix logs
