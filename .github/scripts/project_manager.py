@@ -26,6 +26,69 @@ class ProjectManager:
         cssutils.log.setLevel(logging.CRITICAL)  # Suppress cssutils warnings
         self.html_parser = html.parser.HTMLParser()
 
+    def read_requirements(self):
+        """Read and parse project requirements from the requirements file."""
+        try:
+            if not self.requirements_file.exists():
+                logging.warning(f"Requirements file not found at {self.requirements_file}")
+                return []
+                
+            with open(self.requirements_file, 'r') as f:
+                # Read lines and filter out empty ones
+                requirements = [line.strip() for line in f.readlines() if line.strip()]
+                
+            if not requirements:
+                logging.warning("Requirements file is empty")
+                return []
+                
+            logging.info(f"Read {len(requirements)} requirements")
+            return requirements
+                
+        except Exception as e:
+            logging.error(f"Error reading requirements: {str(e)}")
+            return []
+
+    def check_implementation(self, requirement):
+        """Check if a requirement is implemented by analyzing existing files."""
+        try:
+            files_to_check = {
+                'html': self.project_root / 'index.html',
+                'css': self.project_root / 'styles.css',
+                'js': self.project_root / 'script.js'
+            }
+            
+            # Get content from all existing files
+            content = ''
+            for file_path in files_to_check.values():
+                if file_path.exists():
+                    try:
+                        with open(file_path, 'r') as f:
+                            content += f'\n' + f.read()
+                    except Exception as e:
+                        logging.error(f"Error reading {file_path}: {str(e)}")
+            
+            if not content.strip():
+                return False
+                
+            # Ask Gemini to check implementation
+            prompt = f"""
+            Analyze if this requirement is implemented in the provided code:
+            
+            Requirement: {requirement}
+            
+            Code:
+            {content}
+            
+            Respond with only 'YES' or 'NO'.
+            """
+            
+            response = self.model.generate_content(prompt)
+            return response.text.strip().upper() == 'YES'
+            
+        except Exception as e:
+            logging.error(f"Error checking implementation: {str(e)}")
+            return False
+
     def setup_logging(self):
         """Setup logging configuration"""
         logs_dir = self.project_root / 'logs'
@@ -95,103 +158,64 @@ class ProjectManager:
                 return None
                 
             return fixed_code
+            
         except Exception as e:
             logging.error(f"Error during fix attempt: {str(e)}")
             return None
 
-    def check_and_fix_file(self, file_path):
-        """Check a file for errors and fix if necessary"""
-        with open(file_path, 'r') as f:
-            content = f.read()
-            
-        file_type = file_path.suffix.lower()
-        error = None
-        
-        if file_type == '.html':
-            error = self.check_html_errors(content)
-            language = 'HTML'
-        elif file_type == '.css':
-            error = self.check_css_errors(content)
-            language = 'CSS'
-        elif file_type == '.js':
-            error = self.check_js_errors(content)
-            language = 'JavaScript'
-        else:
-            return
-            
-        if error:
-            logging.warning(f"Found error in {file_path}: {error}")
-            fixed_code = self.fix_code_error(content, error, language)
-            
-            if fixed_code:
-                # Backup original file
-                backup_path = file_path.with_suffix(f"{file_path.suffix}.backup")
-                with open(backup_path, 'w') as f:
-                    f.write(content)
-                    
-                # Write fixed code
-                with open(file_path, 'w') as f:
-                    f.write(fixed_code)
-                    
-                logging.info(f"Fixed error in {file_path}. Original backed up to {backup_path}")
-                
-                # Log the fix details
-                self.log_fix(file_path, error, content, fixed_code)
-
-    def log_fix(self, file_path, error, original_code, fixed_code):
-        """Log details of code fixes"""
-        fixes_log_dir = self.project_root / 'logs' / 'fixes'
-        fixes_log_dir.mkdir(exist_ok=True)
-        
-        log_file = fixes_log_dir / f'fix_{datetime.now().strftime("%Y%m%d_%H%M%S")}_{file_path.name}.log'
-        
-        with open(log_file, 'w') as f:
-            f.write(f"File: {file_path}\n")
-            f.write(f"Error: {error}\n")
-            f.write("\nOriginal Code:\n")
-            f.write(original_code)
-            f.write("\n\nFixed Code:\n")
-            f.write(fixed_code)
-
-    def implement_requirement(self, requirement):
-        """Implement a new requirement using Gemini."""
-        prompt = f"""
-        Implement the following requirement for a web project:
-        {requirement}
-        
-        Provide the necessary HTML, CSS, and JavaScript code.
-        Format the response as JSON with the following structure:
-        {{
-            "html": "code here",
-            "css": "code here",
-            "js": "code here",
-            "description": "feature description"
-        }}
-        """
-        
+    def _update_file(self, filename, content):
+        """Update or create a file with new content."""
         try:
-            response = self.model.generate_content(prompt)
-            implementation = json.loads(response.text)
+            file_path = self.project_root / filename
             
-            # Update files
-            if implementation.get('html'):
-                self._update_file('index.html', implementation['html'])
-            if implementation.get('css'):
-                self._update_file('styles.css', implementation['css'])
-            if implementation.get('js'):
-                self._update_file('script.js', implementation['js'])
+            # Create file if it doesn't exist
+            if not file_path.exists():
+                file_path.touch()
+                
+            # Read existing content
+            existing_content = ''
+            if file_path.stat().st_size > 0:
+                with open(file_path, 'r') as f:
+                    existing_content = f.read()
             
-            # Check for errors in updated files
-            for file_name in ['index.html', 'styles.css', 'script.js']:
-                file_path = self.project_root / file_name
-                if file_path.exists():
-                    self.check_and_fix_file(file_path)
-            
-            # Update README
-            self._update_readme(requirement, implementation['description'])
+            # Append new content if it's not already there
+            if content.strip() not in existing_content:
+                with open(file_path, 'a') as f:
+                    f.write('\n' + content)
+                    
+            logging.info(f"Updated {filename}")
             
         except Exception as e:
-            logging.error(f"Error implementing requirement: {str(e)}\n{traceback.format_exc()}")
+            logging.error(f"Error updating {filename}: {str(e)}")
+
+    def _update_readme(self, requirement, description):
+        """Update README.md with new implementation details."""
+        try:
+            readme_path = self.project_root / 'README.md'
+            
+            # Create README if it doesn't exist
+            if not readme_path.exists():
+                content = "# Auto-Generated Project\n\n## Implemented Features\n\n"
+            else:
+                with open(readme_path, 'r') as f:
+                    content = f.read()
+
+            # Add new feature section if not present
+            if "## Implemented Features" not in content:
+                content += "\n## Implemented Features\n\n"
+            
+            # Add new feature
+            feature_entry = f"### {requirement}\n{description}\n\n"
+            if feature_entry not in content:
+                content += feature_entry
+                
+            with open(readme_path, 'w') as f:
+                f.write(content)
+                
+            logging.info("Updated README.md")
+            
+        except Exception as e:
+            logging.error(f"Error updating README: {str(e)}")
 
     def run(self):
         """Main execution method."""
@@ -217,8 +241,6 @@ class ProjectManager:
             logging.error(f"Error in main execution: {str(e)}\n{traceback.format_exc()}")
         
         logging.info("Completed project manager run")
-
-    # [Previous methods remain unchanged: read_requirements, check_implementation, _update_file, _update_readme]
 
 if __name__ == "__main__":
     manager = ProjectManager()
