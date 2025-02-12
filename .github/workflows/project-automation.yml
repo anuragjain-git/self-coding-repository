@@ -74,6 +74,9 @@ jobs:
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
+
+          # Pull the latest changes before pushing
+          git pull --rebase origin $(git rev-parse --abbrev-ref HEAD)
           
           # Add all changes including new files
           git add index.html styles.css script.js logs/
