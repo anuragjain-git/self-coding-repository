@@ -292,20 +292,23 @@ class ProjectManager:
         Implement the following requirement for a web project:
         {requirement}
         
-        Provide the necessary HTML, CSS, and JavaScript code.  Do *not* use Markdown formatting or code blocks (```) in the response.  The code must be valid JSON strings.
+        Provide *only* the complete and necessary HTML, CSS, and JavaScript code to implement the feature, formatted as a valid JSON object. Do *not* include any surrounding text, Markdown formatting, code blocks (```), or comments outside of the JSON object itself. The JSON object should have the following structure:
         
-        Format the response as JSON with the following structure:
         {{
-            "html": "code here",  //  The HTML code must be a valid JSON string.  Any backticks must be escaped.
-            "css": "code here",   // The CSS code must be a valid JSON string. Any backticks must be escaped.
-            "js": "code here",    // The JavaScript code must be a valid JSON string. Any backticks must be escaped.
+            "html": "complete HTML code here",  //  The complete HTML code for the feature.  It must be a valid JSON string. Any backticks must be escaped.
+            "css": "complete CSS code here",   // The complete CSS code for the feature. It must be a valid JSON string. Any backticks must be escaped.
+            "js": "complete JavaScript code here",    // The complete JavaScript code for the feature.  It must be a valid JSON string. Any backticks must be escaped.
             "description": "feature description"
         }}
+        
+        Respond with *only* the JSON object.  Do not include any other text.
         """
         
         try:
             response = self.model.generate_content(prompt)
-            cleaned_response = re.sub(r"```", "", response.text)
+            # Remove any surrounding text, including triple backticks
+            cleaned_response = re.sub(r"^```json\n|```$", "", response.text, flags=re.MULTILINE)  # Remove ```json and ```
+            cleaned_response = cleaned_response.strip() # Remove leading/trailing whitespace
             
             # Log the full response structure for debugging
             logging.info(f"Raw API Response: {cleaned_response}")
@@ -313,9 +316,12 @@ class ProjectManager:
                 implementation = json.loads(cleaned_response)
             except json.JSONDecodeError as e:
                 logging.error(f"Invalid JSON response from Gemini: {e}")
-                logging.error(f"Raw Response: {cleaned_response}")
-                # Handle the error appropriately, perhaps return None or an empty dictionary
-                return None  # Or {}
+                logging.error(f"Raw Response: {response.text}") # Log the raw response for debugging
+                logging.error(f"Cleaned Response: {cleaned_response}") # Log cleaned response too
+                return None  # Or handle the error as appropriate
+            except Exception as e: # Catch other potential errors
+                logging.error(f"An unexpected error occurred: {e}")
+                return None
             
             # Update files
             if implementation.get('html'):
